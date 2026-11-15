@@ -1,292 +1,176 @@
-# 🛡️ deStale: Live AI Freshness & Fact-Checking Engine
+deStale — AI Stale-Answer Detector
+<p align="center">
+  <img src="assets/logo.svg" alt="deStale logo" width="110" />
+</p><p align="center">
+  <strong>Check whether factual claims in an AI-generated answer are still current.</strong>
+</p><p align="center">
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white" alt="Python 3.11+" /></a>
+  <a href="https://streamlit.io/"><img src="https://img.shields.io/badge/UI-Streamlit-FF4B4B?logo=streamlit&logoColor=white" alt="Streamlit" /></a>
+  <a href="https://github.com/maximhq/bifrost"><img src="https://img.shields.io/badge/LLM%20Gateway-Bifrost-6C63FF" alt="Bifrost" /></a>
+  <a href="https://docs.tavily.com/"><img src="https://img.shields.io/badge/Web%20Search-Tavily-00A67E" alt="Tavily" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License" /></a>
+</p>deStale is a verification layer for AI-generated answers. It extracts factual claims, searches for current web evidence, evaluates each claim, and calculates an overall freshness score. It is designed to help people spot statements that may be outdated, contradicted, uncertain, or not sufficiently supported by the evidence found.
+Built for Geek Room Global AI Hackathon 2026 — Problem Statement 06: Build a Stale-Answer Detector for AI Applications.
 
-[![Python Version](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
-[![Framework](https://img.shields.io/badge/Frontend-Streamlit-FF4B4B.svg)](https://streamlit.io/)
-[![AI Gateway](https://img.shields.io/badge/AI%20Gateway-Bifrost-6366F1.svg)](https://github.com/maximhq/bifrost)
-[![Search Engine](https://img.shields.io/badge/Live%20Search-Tavily%20API-10B981.svg)](https://docs.tavily.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Test Suite](https://img.shields.io/badge/Tests-Pytest%20Passing-brightgreen.svg)](tests/)
+The problem
+AI-generated answers can contain facts that were once correct but have since changed. Examples include product prices, software versions, API behaviour, regulations, public statistics, and company leadership. A fluent answer does not necessarily mean that every claim is current.
+What deStale does
+1. Claim identification — breaks an answer into individual factual claims and identifies claims that may be time-sensitive.
+2. Live evidence search — uses Tavily to search the web for information related to each claim.
+3. Claim verification — uses a model accessed through the Bifrost gateway to assess claims against the retrieved evidence.
+4. Freshness scoring — calculates a transparent heuristic score for each claim and the complete answer.
+5. Review and export — presents findings in a Streamlit dashboard and supports downloadable reports.
+Verification outcomes
+Outcome	Meaning
+Verified / Supported	The available evidence supports the claim.
+Outdated	The claim appears to have been superseded by newer information.
+Contradicted	The retrieved evidence conflicts with the claim.
+Uncertain	The evidence is conflicting or does not support a clear decision.
+Insufficient Evidence	The search did not return enough useful evidence to assess the claim.
 
-> **deStale** is an autonomous AI fact-checking and freshness verification engine. It detects outdated, superseded, and contradicted information in AI-generated answers by querying live internet evidence through **Tavily**, routing multi-model cross-examinations via **MaximHQ Bifrost AI Gateway**, and computing a transparent **Freshness Score (0–100)** with suggested corrections.
 
----
-
-## 📌 Problem Statement
-
-Foundation Large Language Models (LLMs) suffer from static **knowledge cutoff dates**. The physical and digital world moves continuously, yet retraining foundation models takes months and millions of dollars. As a result, AI models often output stale or obsolete data with total confidence:
-
-- 💸 **Outdated Pricing:** Quoting $30.00/1M tokens for legacy GPT-4 when modern GPT-4o costs $2.50/1M tokens.
-- ⚙️ **Deprecated Software:** Recommending Next.js 13 or Python 3.9 as "latest stable versions" in 2024.
-- 🏛️ **Corporate & Legal Changes:** Hallucinating former executives (e.g., claiming Jack Dorsey is Twitter CEO) or citing superseded regulations.
-- 📉 **Obsolete Statistics:** Providing economic metrics or government policies that have been repealed or updated.
-
----
-
-## 💡 The Solution: How deStale Works
-
-deStale implements a zero-trust, 5-stage verification firewall:
-
+A result is only as reliable as the sources retrieved and the evidence assessment. Users should open the cited sources and independently review important or high-impact claims.
+How the system works
+```mermaid
+flowchart TD
+    A[Paste an AI-generated answer] --> B[Claim extraction]
+    B --> C[Identify time-sensitive claims]
+    C --> D[Tavily live web search]
+    D --> E[Evidence snippets and source details]
+    E --> F[Bifrost-assisted claim verification]
+    F --> G[Claim status and suggested correction]
+    G --> H[Freshness scoring]
+    H --> I[Streamlit results dashboard]
+    I --> J[PDF / CSV / Markdown reports]
 ```
-[User AI Text] 
-      │
-      ▼
-1. Claim Extraction  ──(Bifrost Gateway)──►  Atomic Factual Propositions
-      │
-      ▼
-2. Live Web Search   ──(Tavily API)──────►  Authoritative Snippets & Dates
-      │
-      ▼
-3. Fact Verification ──(Bifrost Gateway)──►  Verified | Outdated | Contradicted
-      │
-      ▼
-4. Freshness Scoring ────────────────────►  Heuristic Score (0 - 100)
-      │
-      ▼
-5. Audit & Reporting ────────────────────►  Interactive UI, PDF, CSV, Markdown
-```
+Technology stack
+Technology	Role in this project
+Python	Application and verification logic
+Streamlit	Interactive web dashboard
+Tavily Search API	Live web search and evidence retrieval
+Bifrost by Maxim AI	Gateway used to send model requests for extraction and verification
+Pydantic	Structured data models and validation
+Requests	HTTP communication with APIs and the gateway
+ReportLab	PDF report generation
+Pytest	Automated tests
 
-1. **Atomic Claim Extraction:** Bifrost decomposes free-form answers into isolated, verifiable factual propositions, filtering out opinions, rhetoric, and subjective prose.
-2. **Live Internet Grounding:** Tavily searches the live web for each claim, retrieving canonical URLs, titles, published timestamps, and domain authority.
-3. **Multi-Source Cross-Examination:** Bifrost compares the claim against gathered evidence under strict guardrails: **a claim is never verified on a single blog's word**.
-4. **Freshness Scoring Engine:** Computes an evidence-backed Freshness Index (0–100) weighting time-sensitive claims at 1.5x.
-5. **Automated Corrections:** Extracts the current ground truth from authoritative sources to replace outdated facts.
 
----
+Freshness score
+The overall score is a heuristic index from 0 to 100. It is not a calibrated probability that an answer is correct.
 
-## 🚀 Key Features
+The aggregate score uses a weighted average:
+\[
+\text{Overall Score} = \frac{\sum (\text{Claim Score} \times \text{Claim Weight})}{\sum \text{Claim Weight}}
+\]
+Time-sensitive claims receive a weight of 1.5; other claims receive a weight of 1.0. Individual claim scores are influenced by the verification outcome and evidence-related adjustments implemented in freshness_scorer.py.
 
-- ⚡ **Real MaximHQ Bifrost Integration:** Connects to Bifrost AI Gateway (`http://localhost:8080/v1`) using OpenAI-compatible routing, fallback models, and token monitoring.
-- 🌐 **Real Tavily Live Search:** Queries the live web with session deduplication caching to conserve API credits.
-- 🎨 **Modern Cyberpunk UI:** Custom dark navy dashboard with glowing status badges, freshness meters, and expandable source drawers.
-- ⚖️ **Side-by-Side Diff View:** Instant tabular comparison between original stale claims and verified modern truth.
-- 📄 **Multi-Format Compliance Export:** One-click download of styled PDF audit reports (via ReportLab), CSV datasets, and Markdown summaries.
-- 💡 **Interactive Demo Mode:** Built-in curated real-world benchmarks (AI pricing, software releases, executive governance) for instant testing without active API keys.
-- 🛡️ **Prompt Injection Shielding:** Untrusted inputs and web snippets are encapsulated in `<untrusted_content>` tags with instruction override filters.
+The dashboard uses these overall score bands:
+Score	Label
+80–100	Fresh & Accurate
+50–79.9	Moderate Stale Risk
+0–49.9	High Stale / Outdated Risk
 
----
 
-## 🛠️ Tech Stack
-
-| Component | Technology | Description |
-| :--- | :--- | :--- |
-| **Language** | Python 3.11+ | High performance, static typing, Pydantic schemas |
-| **Frontend** | Streamlit | Reactive UI with custom responsive CSS |
-| **AI Gateway** | MaximHQ Bifrost | Multi-model routing, fallback resilience, latency tracking |
-| **Search Engine** | Tavily Live Search API | Purpose-built AI web search with date extraction |
-| **Data Validation** | Pydantic v2 | Robust JSON parsing and type validation |
-| **Document Export** | ReportLab | Enterprise-grade PDF report generation |
-| **Testing** | Pytest | mocked offline automated tests |
-
----
-
-## 📁 Project Architecture & File Structure
-
-```text
+Treat the score as a review aid, not a substitute for checking sources—especially for legal, medical, financial, or safety-critical information.
+Project structure
 deStale/
-├── .github/
-│   └── workflows/
-│       └── ci.yml             # GitHub Actions CI workflow (Python 3.10, 3.11, 3.12)
-├── assets/
-│   └── logo.svg               # deStale project emblem & SVG badge
+├── .github/workflows/ci.yml  # Automated test workflow
+├── assets/logo.svg           # Project logo
 ├── docs/
-│   ├── ARCHITECTURE.md        # Detailed system specifications & threat model
-│   ├── PRESENTATION.md        # 10-Slide pitch presentation deck
-│   ├── DEMO_SCRIPT.md         # 3-5 minute live demonstration script
-│   └── VIVA_QUESTIONS.md      # 25 Viva/interview Q&A guide
-├── tests/
-│   ├── __init__.py            # Test package marker
-│   ├── test_claim_extractor.py # Claim decomposition & prompt shielding tests
-│   ├── test_tavily_search.py   # Tavily caching, rate-limiting & network tests
-│   ├── test_fact_verifier.py   # Multi-source synthesis & classification tests
-│   ├── test_freshness_scorer.py# Heuristic scoring engine & weighting tests
-│   └── test_end_to_end.py     # Mocked full-pipeline integration test
-├── app.py                     # Streamlit reactive dashboard & cyberpunk UI
-├── config.py                  # Singleton settings & environment configuration
-├── models.py                  # Pydantic v2 schemas for claims, sources, and reports
-├── bifrost_client.py          # MaximHQ Bifrost AI Gateway REST client
-├── tavily_search.py           # Tavily Live Web Search API client with caching
-├── claim_extractor.py         # Atomic claim extraction & decomposition
-├── fact_verifier.py           # Multi-source evidence cross-examiner
-├── freshness_scorer.py        # Heuristic Freshness Scoring Engine (0 - 100)
-├── report_generator.py        # Styled PDF, CSV, and Markdown audit report exporter
-├── demo_data.py               # Pre-cached curated real-world benchmark datasets
-├── utils.py                   # Domain authority heuristics & prompt sanitization
-├── generate_complete_project_pdf.py # Standalone PDF documentation builder
-├── deStale_Complete_Project_Documentation.pdf # Generated executive documentation PDF
-├── requirements.txt           # Production & development dependencies
-├── .env.example               # Template for Bifrost & Tavily credentials
-├── .gitignore                 # Excludes .env, virtual environments, caches
-├── LICENSE                    # MIT Open Source License
-├── CONTRIBUTING.md            # Guidelines for open source contributors
-├── SECURITY.md                # Security policy & responsible disclosure
-└── CODE_OF_CONDUCT.md         # Contributor Covenant Code of Conduct
-```
-
----
-
-## ⚡ Installation & Setup
-
-### 1. Clone or Open the Repository
-```bash
-git clone https://github.com/your-username/deStale.git
+│   ├── ARCHITECTURE.md       # Architecture and security notes
+│   ├── DEMO_SCRIPT.md        # Hackathon demo walkthrough
+│   ├── PRESENTATION.md       # Presentation outline
+│   └── VIVA_QUESTIONS.md     # Technical viva preparation
+├── tests/                    # Unit and mocked integration tests
+├── app.py                    # Streamlit application
+├── bifrost_client.py         # Bifrost gateway client
+├── claim_extractor.py        # Factual claim extraction
+├── config.py                 # Environment-based configuration
+├── demo_data.py              # Curated demo scenarios
+├── fact_verifier.py          # Evidence-based claim assessment
+├── freshness_scorer.py       # Claim and aggregate scoring
+├── models.py                 # Pydantic data models
+├── report_generator.py       # PDF, CSV and Markdown exports
+├── tavily_search.py          # Tavily search client
+├── utils.py                  # Shared helpers and input handling
+├── requirements.txt          # Python dependencies
+├── .env.example              # Environment variable template
+└── README.md
+Run locally
+1. Requirements
+- Python 3.11 or newer
+- Git
+- A Tavily API key for live web search
+- A running Bifrost gateway with a configured model provider for live AI extraction and verification
+2. Clone the repository
+git clone https://github.com/Sidharth1025/deStale.git
 cd deStale
-```
-
-### 2. Create and Activate a Virtual Environment
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
-
-# macOS / Linux
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install Dependencies
-```bash
+3. Create and activate a virtual environment
+Windows PowerShell:
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+If PowerShell prevents script activation, use Command Prompt instead:
+.venv\Scripts\activate.bat
+macOS / Linux:
+python3 -m venv .venv
+source .venv/bin/activate
+4. Install dependencies
+python -m pip install --upgrade pip
 pip install -r requirements.txt
-```
-
-### 4. Configure API Keys
-Copy `.env.example` to `.env`:
-```bash
+5. Configure environment variables
+Copy the example file:
 # Windows PowerShell
 Copy-Item .env.example .env
-
 # macOS / Linux
 cp .env.example .env
-```
-
-Edit `.env` with your credentials:
-```env
-# Bifrost AI Gateway Configuration (https://github.com/maximhq/bifrost)
+Edit .env and provide your own values:
 BIFROST_BASE_URL=http://localhost:8080/v1
 BIFROST_API_KEY=your_bifrost_or_provider_key
 BIFROST_MODEL=gpt-4o-mini
+BIFROST_TIMEOUT=45
+BIFROST_MAX_RETRIES=3
 
-# Tavily Live Search API (https://app.tavily.com/)
-TAVILY_API_KEY=tvly-your_tavily_api_key_here
+TAVILY_API_KEY=tvly-your_tavily_api_key
 TAVILY_SEARCH_DEPTH=advanced
 TAVILY_MAX_RESULTS=5
-```
+TAVILY_TIMEOUT=20
+TAVILY_MAX_RETRIES=3
 
-> **Note on Demo Mode:** If API credentials or the AI gateway are unavailable, the application has fallback/demo behavior for trying the interface. Demo or fallback evidence is illustrative and must not be presented as live verification.
+DEMO_MODE=false
+Get a Tavily key from Tavily. Configure and start your Bifrost gateway by following the Bifrost documentation. The default gateway URL in this project is http://localhost:8080/v1; change it if your gateway uses another address.
 
----
-
-## 🖥️ Running the Application
-
-Launch the Streamlit web dashboard:
-```bash
+Keep .env private. It is excluded by .gitignore. Never put real API keys in source files, screenshots, issues, or commits. If a key is exposed, revoke it with its provider and create a new one.
+6. Start the dashboard
 streamlit run app.py
-```
-
-The application will be accessible at:
-```
-http://localhost:8501
-```
-
----
-
-## 🧪 Automated Testing
-
-deStale includes a comprehensive test suite. Automated tests utilize mocked responses so that **no API credits are consumed**:
-
-```bash
-# Run all unit and integration tests
+Open http://localhost:8501 in your browser.
+Demo and live mode
+The repository includes curated demo scenarios for exploring the interface. Demo/fallback output is illustrative and is not proof of a live web check. To perform live verification, make sure the Bifrost gateway and model provider are reachable and that valid Bifrost and Tavily credentials are configured. Check the displayed mode and evidence sources before describing a result as live.
+Run the tests
+The automated tests use mocked responses; they are intended to test application logic without consuming live API credits.
 pytest -v tests/
-```
-
----
-
-## 📊 Freshness Scoring Heuristic Explained
-
-deStale transparently documents that its score is an **evidence-based empirical index**, not an uncalibrated probability:
-
-$$\text{Aggregate Freshness} = \frac{\sum_{i=1}^N (\text{Claim Score}_i \times \text{Weight}_i)}{\sum_{i=1}^N \text{Weight}_i}$$
-
-- **Base Classifications:**
-  - `Verified / Supported`: `100.0`
-  - `Outdated (Superseded)`: `15.0` (Severe penalty for stale historical data)
-  - `Contradicted (False)`: `0.0`
-  - `Uncertain`: `45.0`
-  - `Insufficient Evidence`: `50.0`
-- **Domain Authority Multiplier:** Multiple authoritative sources (`.gov`, `.edu`, official documentation) maintain top 100 confidence; single unverified sources receive a $-25$ point penalty.
-- **Time Sensitivity Weighting:** Time-sensitive statements (prices, releases, corporate leadership) receive **1.5x weight** in the final score.
-
----
-
-## 🚢 GitHub Repository Deployment
-
-To initialize Git and publish your repository to GitHub:
-
-```bash
-# Initialize git repository
-git init
-
-# Add all files
-git add .
-
-# Initial commit
-git commit -m "feat: initial commit of deStale AI Freshness Detector"
-
-# Set main branch
-git branch -M main
-
-# Link to your remote GitHub repository
-git remote add origin https://github.com/<your-username>/deStale.git
-
-# Push to GitHub
-git push -u origin main
-```
-
----
-
-## 📚 Supplementary Documentation
-
-Detailed documentation and presentations are provided in the [`docs/`](docs/) directory:
-
-- 🏛️ **[System Architecture & Threat Model](docs/ARCHITECTURE.md)**: In-depth technical specifications, pipeline stages, security boundaries, and sequence flows.
-- 🎤 **[3–5 Minute Pitch & Live Demo Script](docs/DEMO_SCRIPT.md)**: Turnkey presenter walkthrough tailored for hackathon judges and investors.
-- 📊 **[10-Slide Pitch Deck Outline](docs/PRESENTATION.md)**: Slide-by-slide structure with speaking notes and visual guidance.
-- 🎓 **[25 Viva & Interview Questions](docs/VIVA_QUESTIONS.md)**: Deep technical Q&A covering LLM cutoff mechanics, scoring calibration, Bifrost gateway advantages, and adversarial edge cases.
-- 📄 **[Executive Project Documentation (PDF)](deStale_Complete_Project_Documentation.pdf)**: Comprehensive offline PDF report generated via ReportLab.
-
----
-
-## 🤝 Contributing & Community
-
-Contributions are warmly welcomed! Please read our community guidelines before submitting code:
-- **[Contributing Guide](CONTRIBUTING.md)**: Setup, branch rules, and PR checklist.
-- **[Code of Conduct](CODE_OF_CONDUCT.md)**: Community standards and pledge.
-- **[Security Policy](SECURITY.md)**: Reporting vulnerabilities and responsible disclosure.
-
----
-
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Reports
+The application includes report export functionality for:
+- PDF
+- CSV
+- Markdown
+Hackathon integrations
+The hackathon statement requires both Tavily and Bifrost. This repository uses them as follows:
+Required integration	Implementation	Contribution
+Tavily	tavily_search.py	Retrieves current web search evidence for factual claims.
+Bifrost by Maxim AI	bifrost_client.py	Routes model requests used in claim extraction and evidence-based verification.
 
 
-## 🔐 Security and API keys
-
-- Never commit `.env`, API keys, tokens, or private configuration files.
-- Keep `.env.example` as a template containing placeholders only.
-- `.gitignore` already excludes `.env` and common Python environment files.
-- If a key is accidentally pushed to a public repository, revoke it at the provider and create a replacement immediately.
-- Live verification requires a reachable Bifrost gateway/model provider and a valid Tavily API key. Without them, the app may use fallback/demo behavior; check the UI and logs before describing a result as live.
-
-## 🧩 Mandatory hackathon integrations
-
-This implementation uses both technologies named in the problem statement:
-
-| Required technology | Where it is used | Purpose |
-|---|---|---|
-| Tavily | `tavily_search.py` | Searches the live web for claim-related evidence and returns source metadata |
-| Bifrost by Maxim AI | `bifrost_client.py` | Routes LLM requests for claim extraction and evidence-based verification |
-
-The app's main flow is: user answer → claim extraction → Tavily evidence search → Bifrost-assisted verification → freshness scoring → downloadable audit report.
-
-## 🧪 Current verification status
-
-The included automated test suite was run locally during repository preparation: **12 tests passed**. These tests use mocked/offline behavior; this does not prove that external API credentials, a live Bifrost gateway, or live Tavily requests are configured on another machine.
+Documentation
+- [System architecture](docs/ARCHITECTURE.md)
+- [Demo script](docs/DEMO_SCRIPT.md)
+- [Presentation outline](docs/PRESENTATION.md)
+- [Viva questions and answers](docs/VIVA_QUESTIONS.md)
+- [Complete project documentation (PDF)](deStale_Complete_Project_Documentation.pdf)
+- [GitHub upload guide](GITHUB_UPLOAD_GUIDE.md)
+Contributing
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+Security
+Please do not report security vulnerabilities in public issues. Follow the instructions in [SECURITY.md](SECURITY.md).
+License
+This project is licensed under the MIT License.
+Repository: github.com/Sidharth1025/deStale
