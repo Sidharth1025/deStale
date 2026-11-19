@@ -5,10 +5,21 @@ for Bifrost AI Gateway, Tavily Search API, and application behavior.
 """
 
 import os
+import streamlit as st
 from typing import Optional
 from dataclasses import dataclass
 from dotenv import load_dotenv
 
+def get_setting(name, default=""):
+    value = os.getenv(name)
+
+    if value:
+        return value
+
+    try:
+        return st.secrets.get(name, default)
+    except Exception:
+        return default
 # Load .env if present
 load_dotenv()
 
@@ -25,19 +36,21 @@ class AppConfig:
     # Bifrost AI Gateway Configuration
     # Bifrost documentation: https://github.com/maximhq/bifrost
     # Default local Bifrost gateway runs on port 8080 or can point to custom proxy/hosted endpoint
-    BIFROST_BASE_URL: str = os.getenv("BIFROST_BASE_URL", "http://localhost:8080/v1")
-    BIFROST_API_KEY: str = os.getenv("BIFROST_API_KEY", os.getenv("OPENAI_API_KEY", ""))
-    BIFROST_MODEL: str = os.getenv("BIFROST_MODEL", "gpt-4o-mini")
-    BIFROST_TIMEOUT: int = int(os.getenv("BIFROST_TIMEOUT", "45"))
-    BIFROST_MAX_RETRIES: int = int(os.getenv("BIFROST_MAX_RETRIES", "3"))
+   # Bifrost Configuration
+    BIFROST_BASE_URL: str = get_setting(
+        "BIFROST_BASE_URL", "http://localhost:8080/v1"
+    )
+    BIFROST_API_KEY: str = get_setting("BIFROST_API_KEY") or get_setting("OPENAI_API_KEY")
+    BIFROST_MODEL: str = get_setting("BIFROST_MODEL", "groq/openai/gpt-oss-20b")
+    BIFROST_TIMEOUT: int = int(get_setting("BIFROST_TIMEOUT", "45"))
+    BIFROST_MAX_RETRIES: int = int(get_setting("BIFROST_MAX_RETRIES", "3"))
 
-    # Tavily Live Search API Configuration
-    # Tavily documentation: https://docs.tavily.com/
-    TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
-    TAVILY_SEARCH_DEPTH: str = os.getenv("TAVILY_SEARCH_DEPTH", "advanced")  # 'basic' or 'advanced'
-    TAVILY_MAX_RESULTS: int = int(os.getenv("TAVILY_MAX_RESULTS", "5"))
-    TAVILY_TIMEOUT: int = int(os.getenv("TAVILY_TIMEOUT", "20"))
-    TAVILY_MAX_RETRIES: int = int(os.getenv("TAVILY_MAX_RETRIES", "3"))
+    # Tavily Configuration
+    TAVILY_API_KEY: str = get_setting("TAVILY_API_KEY")
+    TAVILY_SEARCH_DEPTH: str = get_setting("TAVILY_SEARCH_DEPTH", "advanced")
+    TAVILY_MAX_RESULTS: int = int(get_setting("TAVILY_MAX_RESULTS", "5"))
+    TAVILY_TIMEOUT: int = int(get_setting("TAVILY_TIMEOUT", "20"))
+    TAVILY_MAX_RETRIES: int = int(get_setting("TAVILY_MAX_RETRIES", "3"))
 
     # Processing Boundaries & Security
     MAX_INPUT_LENGTH: int = 12000  # Character limit for submitted AI text
