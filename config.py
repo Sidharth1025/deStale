@@ -41,7 +41,7 @@ class AppConfig:
         "BIFROST_BASE_URL", "http://localhost:8080/v1"
     )
     BIFROST_API_KEY: str = get_setting("BIFROST_API_KEY") or get_setting("OPENAI_API_KEY")
-    BIFROST_MODEL: str = get_setting("BIFROST_MODEL", "groq/openai/gpt-oss-20b")
+    BIFROST_MODEL: str = get_setting("BIFROST_MODEL", "openai/gpt-oss-20b")
     BIFROST_TIMEOUT: int = int(get_setting("BIFROST_TIMEOUT", "45"))
     BIFROST_MAX_RETRIES: int = int(get_setting("BIFROST_MAX_RETRIES", "3"))
 
