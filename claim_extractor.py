@@ -87,6 +87,44 @@ class ClaimExtractor:
             parsed_json = extract_json_from_llm_response(raw_response)
             claims_data = parsed_json.get("claims", [])
 
+        # Validate that extracted claims are grounded in the original input.
+        source_words = set(re.findall(r"\w+", clean_text.lower()))
+        source_numbers = set(re.findall(r"\b\d+(?:\.\d+)*\b", clean_text))
+
+        valid_claims_data = []
+
+        for item in claims_data:
+            claim_text = item.get("claim_text", "").strip()
+
+            if not claim_text:
+                continue
+
+            claim_words = set(re.findall(r"\w+", claim_text.lower()))
+            claim_numbers = set(re.findall(r"\b\d+(?:\.\d+)*\b", claim_text))
+
+            meaningful_words = {
+                word for word in claim_words
+                if len(word) > 2
+            }
+
+            overlap = meaningful_words & source_words
+            overlap_ratio = (
+                len(overlap) / len(meaningful_words)
+                if meaningful_words else 0
+            )
+
+            # Reject claims containing numbers or versions absent from the input.
+            if not claim_numbers.issubset(source_numbers):
+                logger.warning("Rejected ungrounded claim: %s", claim_text)
+                continue
+
+            if overlap_ratio < 0.5:
+                logger.warning("Rejected unrelated claim: %s", claim_text)
+                continue
+
+            valid_claims_data.append(item)
+
+        claims_data = valid_claims_data
             claims: List[FactualClaim] = []
             for item in claims_data[:max_claims]:
                 claim = FactualClaim(
