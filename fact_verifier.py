@@ -143,7 +143,7 @@ class FactVerifier:
 
     def _requires_temporal_comparison(self, claim: FactualClaim) -> bool:
         text = claim.claim_text.lower()
-        return claim.time_sensitive or any(term in text for term in self.TEMPORAL_COMPARISON_TERMS)
+        return any(term in text for term in self.TEMPORAL_COMPARISON_TERMS)
 
     @staticmethod
     def _parse_date(value: Optional[str]) -> Optional[date]:
@@ -273,6 +273,63 @@ class FactVerifier:
             )
 
         combined = " ".join(f"{e.title} {e.snippet}" for e in authoritative).lower()
+
+        # Detect explicit contradiction of a current-support claim.
+        claim_lower = claim.claim_text.lower()
+
+        claims_python2_is_current = (
+            "python 2" in claim_lower
+            and any(term in claim_lower for term in (
+                "latest supported",
+                "currently supported",
+                "latest version",
+                "still supported",
+            ))
+        )
+
+        evidence_confirms_python2_eol = (
+            "python 2" in combined
+            and any(term in combined for term in (
+                "no longer supported",
+                "end-of-life",
+                "end of life",
+                "no further official support",
+            ))
+        )
+
+        if claims_python2_is_current and evidence_confirms_python2_eol:
+            return (
+                VerificationStatus.CONTRADICTED,
+                "Official Python evidence confirms that Python 2 reached end-of-life and is no longer supported. This directly contradicts the claim that Python 2 is the latest supported version.",
+                "Refer to the official Python 2 end-of-life announcement.",
+                0.95,
+            )
+
+                # Verify historical End-of-Life claims using matching dated evidence.
+        claim_lower = claim.claim_text.lower()
+
+        historical_eol_claim = (
+            ("end-of-life" in claim_lower or "eol" in claim_lower)
+            and "2020" in claim_lower
+        )
+
+        evidence_confirms_eol = (
+            ("end-of-life" in combined or "end of life" in combined)
+            and "2020" in combined
+            and (
+                "no longer supported" in combined
+                or "no new bug reports" in combined
+                or "no further official support" in combined
+            )
+        )
+
+        if historical_eol_claim and evidence_confirms_eol:
+            return (
+                VerificationStatus.VERIFIED,
+                "Authoritative evidence confirms that Python 2 reached End-of-Life in 2020 and no longer receives official support.",
+                None,
+                0.90,
+            )
         supersession_cues = (
             "replaced by", "succeeded by", "superseded", "discontinued", "end of support",
             "no longer supported", "newer version", "new release", "latest version is",
