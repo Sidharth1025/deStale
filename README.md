@@ -9,6 +9,16 @@
 
 > **deStale** is an autonomous AI fact-checking and freshness verification engine. It detects outdated, superseded, and contradicted information in AI-generated answers by querying live internet evidence through **Tavily**, routing multi-model cross-examinations via **MaximHQ Bifrost AI Gateway**, and computing a transparent **Freshness Score (0–100)** with suggested corrections.
 
+## 🚀 Try deStale
+
+**Live application:** [Launch deStale](https://destale-ai.streamlit.app)
+
+[![Open Live Streamlit Demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://destale-ai.streamlit.app)
+
+**AI-narrated product walkthrough:** [Watch the deStale demo](https://app.heygen.com/videos/c9a62a2e910d2c74b5eafdc65441fcb6)
+
+> The live application is the interactive demo for judges. The walkthrough link opens the completed narrated video in HeyGen; downloading the MP4 may require a HeyGen plan that supports exports.
+
 ---
 
 ## 📌 Problem Statement
@@ -27,7 +37,7 @@ Foundation Large Language Models (LLMs) suffer from static **knowledge cutoff da
 deStale implements a zero-trust, 5-stage verification firewall:
 
 ```
-[User AI Text] 
+[User AI Text]
       │
       ▼
 1. Claim Extraction  ──(Bifrost Gateway)──►  Atomic Factual Propositions
@@ -128,7 +138,7 @@ deStale/
 
 ### 1. Clone or Open the Repository
 ```bash
-git clone https://github.com/your-username/deStale.git
+git clone https://github.com/Sidharth1025/deStale.git
 cd deStale
 ```
 
@@ -160,7 +170,7 @@ python -m pip install -r requirements.txt
 
 ### 4. Configure API Keys
 Copy `.env.example` to `.env`:
-```bash
+```powershell
 # Windows PowerShell
 Copy-Item .env.example .env
 
@@ -247,7 +257,7 @@ git commit -m "feat: initial commit of deStale AI Freshness Detector"
 git branch -M main
 
 # Link to your remote GitHub repository
-git remote add origin https://github.com/<your-username>/deStale.git
+git remote add origin https://github.com/Sidharth1025/deStale.git
 
 # Push to GitHub
 git push -u origin main
@@ -277,8 +287,8 @@ Contributions are warmly welcomed! Please read our community guidelines before s
 ---
 
 ## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🔐 Security and API keys
 
